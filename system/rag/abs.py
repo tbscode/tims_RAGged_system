@@ -102,6 +102,8 @@ class RagEdge:
 
 class RagGraph:
     
+    yield_messages: List[YieldMessage] = []
+    
     def __init__(
             self, 
             nodes: List[RagNode],
@@ -182,6 +184,7 @@ class RagGraph:
             if len(node_res.yield_messages) > 0:
                 for msg in node_res.yield_messages:
                     print(f"=====> Yielded message: {msg.content}")
+                self.yield_messages.extend(node_res.yield_messages)
             if node_res.forward:
                 node = self.get_node(node_name)
                 
@@ -194,6 +197,12 @@ class RagGraph:
             print("End node found:", end_node)
             return context
         return self.run_subgraph2(next_nodes, context)
+    
+    def get_final_result(self, context):
+        end_node_names = list(context.parent_results.keys())
+        assert len(end_node_names) == 1, "Multiple end nodes found."
+        end_node_name = end_node_names[0]
+        return context.parent_results[end_node_name].response
 
     def run(
             self,
@@ -206,7 +215,9 @@ class RagGraph:
         print("Start node:", start_node)
         context = self.run_subgraph2([start_node], context)
         
-        print("Final results:", context.parent_results["EndNode"].response)
+        end_result = self.get_final_result(context)
+        print("Yield messages:", self.yield_messages)
+        print("Final results:", end_result)
         
 @dataclass
 class RagNodeResult:

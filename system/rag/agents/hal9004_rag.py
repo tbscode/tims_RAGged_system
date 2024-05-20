@@ -1,5 +1,5 @@
 from rag.abs import RagEdge, RagNode, NodeContext
-from rag.nodes import ParamExtractorNode, CasualResponseNode, ToolSelectorNode, ToolCasualEndNode, WebSearchLookup
+from rag.nodes import ParamExtractorNode, CasualResponseNode, ToolSelectorNode, ToolCasualEndNode, WebSearchLookup, WebSearchResponse
 from rag.abs import RagGraph
 
 nodes = [
@@ -72,6 +72,7 @@ The casual function can only be used without the other functions intends.
     ),
     ToolSelectorNode("ToolSelector"),
     WebSearchLookup("WebSearchLookup"),
+    WebSearchResponse("WebSearchResponse", end_node=True),
     ToolCasualEndNode("EndNode", end_node=True)
 ]
 
@@ -82,6 +83,14 @@ def end_casual_check(edge, context: NodeContext):
     else:
         edge.disabled = True
     print(f"*** End casual edge disabled: {edge.disabled}")
+    
+def use_webseach_check(edge, context: NodeContext):
+    selected_tools = context.all_results["ToolUsageCategorizer"].response["intends"]
+    if "web_search" in selected_tools:
+        edge.disabled = False
+    else:
+        edge.disabled = True
+    print(f"*** Web search edge disabled: {edge.disabled}")
 
 edges = [
     # Inital stage
@@ -122,6 +131,12 @@ edges = [
     RagEdge(
         start="ToolSelector",
         end="WebSearchLookup",
+        update_overwrite=use_webseach_check
+    ),
+    
+    RagEdge(
+        start="WebSearchLookup",
+        end="WebSearchResponse"
     ),
 
     RagEdge( # Happy-Path to casual response
