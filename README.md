@@ -12,6 +12,8 @@ Edges of the graph can be toggeled based on node results, and nodes can also be 
 Rougly this diagram presents the agents structure.
 Nodes are executed in parallel, and edges are toggled based on node results.
 
+- Agent graph definition [can be found here](system/rag/agents/hal9004_rag.py)
+
 ![Graph](_misc/tims_RAGged_system.drawio.png)
 
 ## Contraints
