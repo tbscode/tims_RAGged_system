@@ -30,6 +30,9 @@ def request_speech_to_text(prompt, output_path="output.mp3"):
         for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
             if chunk:
                 f.write(chunk)
+    
+    print(f"*** Text to speech in {output_path}, {response.status_code} {response.text}", flush=True)
+    return output_path
                 
     
 if __name__ == "__main__":
