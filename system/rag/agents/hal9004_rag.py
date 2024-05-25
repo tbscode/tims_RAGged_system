@@ -91,6 +91,14 @@ def use_webseach_check(edge, context: NodeContext):
     else:
         edge.disabled = True
     print(f"*** Web search edge disabled: {edge.disabled}")
+    
+def end_websearch_response(edge, context: NodeContext):
+    selected_tools = context.all_results["ToolUsageCategorizer"].response["intends"]
+    if ("web_search" in selected_tools) and len(selected_tools) == 1:
+        edge.disabled = False
+    else:
+        edge.disabled = True
+    print(f"*** Web search edge disabled: {edge.disabled}")
 
 edges = [
     # Inital stage
@@ -136,7 +144,8 @@ edges = [
     
     RagEdge(
         start="WebSearchLookup",
-        end="WebSearchResponse"
+        end="WebSearchResponse",
+        update_overwrite=end_websearch_response
     ),
 
     RagEdge( # Happy-Path to casual response

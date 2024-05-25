@@ -3,9 +3,9 @@ from rag.abs import RagNode, NodeContext, RagNodeResult, YieldMessage
 
 class ToolCasualEndNode(RagNode):
     
-    def run(self, context):
+    def run(self, context: NodeContext):
         print(f"End node {self.name} reached")
-        casual_response = context.parent_results["CasualResponse"].response
+        casual_response = context.all_results["CasualResponse"].response
         print("Casual response:", casual_response)
         return RagNodeResult(
             node_name=self.name,

@@ -87,10 +87,23 @@ MODELS = [
 ]
 
 def get_client_for_model(
-    model: str
+    model: str,
+    async_client: bool = False
 ):
     model = get_model(model)
-    client = create_client(model.client_config)
+    if async_client:
+        client = create_async_client(model.client_config)
+    else:
+        client = create_client(model.client_config)
+    return client
+
+def create_async_client(
+    backend: BackendConfig
+):
+    client = openai.AsyncOpenAI(
+        api_key=backend.api_key,
+        base_url=backend.base_url
+    )
     return client
 
 def create_client(
