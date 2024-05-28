@@ -6,6 +6,7 @@ import os
 class Backends:
     OPENAI = "openai"
     DEEPINFRA = "deepinfra"
+    GROQ = "groq"
 
 @dataclass
 class BackendConfig:
@@ -31,10 +32,22 @@ BACKENDS = {
         name=Backends.DEEPINFRA,
         api_key=os.getenv("DEEPINFRA_API_KEY"),
         base_url="https://api.deepinfra.com/v1/openai"
+    ),
+    Backends.GROQ: BackendConfig(
+        name=Backends.GROQ,
+        api_key=os.getenv("GROQ_API_KEY"),
+        base_url="https://api.groq.com/openai/v1"
     )
 }
 
 MODELS = [
+    ModelBackend(
+        model="llama3-70b-8192",
+        supports_json=False,
+        supports_tools=True,
+        supports_functions=True,
+        client_config=BACKENDS[Backends.GROQ]
+    ),
     ModelBackend(
         model="meta-llama/Meta-Llama-3-70B-Instruct",
         supports_json=False,

@@ -1,7 +1,8 @@
 import requests
 import os
+from rag.models import get_model, get_client_for_model, BACKENDS, Backends
 
-model_id ="21m00Tcm4TlvDq8ikWAM"
+model_id = "VEJVJeXDkdy7O1Yr5tZS"
 API_KEY = os.getenv("ELVENLABS_API_KEY")
 
 def request_speech_to_text(prompt, output_path="output.mp3"):
@@ -11,7 +12,7 @@ def request_speech_to_text(prompt, output_path="output.mp3"):
 
     data = {
         "text": prompt,
-        "model_id": "eleven_monolingual_v1",
+        "model_id": "eleven_multilingual_v2",
         "voice_settings": {
             "stability": 0.5,
             "similarity_boost": 0.5
@@ -31,10 +32,30 @@ def request_speech_to_text(prompt, output_path="output.mp3"):
             if chunk:
                 f.write(chunk)
     
-    print(f"*** Text to speech in {output_path}, {response.status_code} {response.text}", flush=True)
+    print(f"*** Text to speech in {output_path}, {response.status_code}", flush=True)
+    if response.status_code != 200:
+        print(f"*** Error in text to speech: {response.text}", flush=True)
+    return output_path
+
+def requset_text_to_speech_openai(
+    prompt: str,
+    output_path: str = "output.mp3"
+):
+    pass
+    from openai import OpenAI
+    client = OpenAI(
+        api_key=BACKENDS[Backends.OPENAI].api_key,
+    )
+
+    response = client.audio.speech.create(
+      model="tts-1",
+      voice="nova",#"alloy",
+      input=prompt
+    )
+    response.stream_to_file(output_path)
+    print(f"*** Text to speech in {output_path}", flush=True)
     return output_path
                 
     
 if __name__ == "__main__":
     request_speech_to_text("Hello, how are you?")
-

@@ -21,7 +21,7 @@ if not os.path.exists(output_dir):
 sample_rate = 44100
 duration = 0.2
 min_level = -40
-silence_threshold = 10
+silence_threshold = 6
 api_key = BACKENDS[Backends.DEEPINFRA].api_key
 
 def audio_recording(queue):
@@ -84,7 +84,7 @@ def audio_processing(queue):
     time_until_answer += elapsed
     print(f"*** Recognized text in {elapsed:.2f}s: {text}", flush=True)
 
-    elapsed, res = timed(continous_reponse.main)(text)
+    elapsed, res = timed(continous_reponse.main)(text, output_dir=output_dir)
     if False:
         time_until_answer += elapsed
         print(f"*** Response in {elapsed:.2f}s: {res}", flush=True)
