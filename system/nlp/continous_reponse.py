@@ -9,9 +9,17 @@ import time
 from multiprocessing import Process
 from queue import Queue
 import threading
-from nlp.text_to_speech import request_speech_to_text
+from nlp.text_to_speech import request_speech_to_text, requset_text_to_speech_openai
 import glob
 import asyncio
+
+def timed(func):
+    def _w(*a, **k):
+        then = time.time()
+        res = func(*a, **k)
+        elapsed = time.time() - then
+        return elapsed, res
+    return _w
 
 # Constants and Output Directory
 timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -34,7 +42,8 @@ async def fetch_response(prompt):
         "content": prompt
     }]
     
-    model = 'meta-llama/Meta-Llama-3-70B-Instruct'
+    #model = 'meta-llama/Meta-Llama-3-70B-Instruct'
+    model = 'llama3-70b-8192'
 
     completion_params = {
         "model": model,
@@ -52,15 +61,23 @@ async def fetch_response(prompt):
 
 async def process_stream(prompt):
     buffer = ''
+    delimiters = ['.'] # ['.', '?', '!', ',']
+    start_time = time.time()
+    elased_time = 0
     response = await fetch_response(prompt)
     async for chunk in response:
         if len(chunk.choices) > 0:
             delta = chunk.choices[0].delta
             if delta.content:
                 buffer += delta.content
-                while '.' in buffer:
-                    sentence, buffer = buffer.split('.', 1)
-                    yield sentence.strip() + '.'
+                while any(delimiter in buffer for delimiter in delimiters):
+                    for delimiter in delimiters:
+                        if delimiter in buffer:
+                            sentence, buffer = buffer.split(delimiter, 1)
+                            elased_time = time.time() - start_time
+                            print(f"*** EMMITED Elapsed time: {elased_time:.2f} seconds", flush=True)
+                            yield sentence.strip() + delimiter
+                            break
     if buffer:
         yield buffer.strip()
 
@@ -115,34 +132,38 @@ def recognize_speech(audio_file_path):
         return None
     
 
-def play_audio_files(queue):
+def play_audio_files(queue, output_dir="/tmp/recordings"):
     while True:
         audio_file = queue.get()
         if audio_file is None:
             break
-        audio_segment = AudioSegment.from_mp3(audio_file)
+        audio_segment = AudioSegment.from_mp3(output_dir + "/" + audio_file)
         play(audio_segment)
         queue.task_done()
 
-def run_async(prompt, queue):
+def run_async(prompt, queue, output_dir="/tmp/recordings"):
     async def async_process():
         async for sentence in process_stream(prompt):
             print(sentence)
             output_path = f"output_{sentence[:10].replace(' ', '_')}.mp3"
-            request_speech_to_text(sentence, output_path)
+            #request_speech_to_text(sentence, output_dir + "/" + output_path)
+            requset_text_to_speech_openai(
+                sentence,
+                output_path=output_dir + "/" + output_path
+            )
             queue.put(output_path)
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(async_process())
 
-def main(prompt="How is the weather in Aachen today?"):
+def main(prompt="How is the weather in Aachen today?", output_dir="/tmp/recordings"):
     audio_queue = Queue()
 
     # Start the audio playback thread
-    playback_thread = threading.Thread(target=play_audio_files, args=(audio_queue,))
+    playback_thread = threading.Thread(target=play_audio_files, args=(audio_queue, output_dir))
     playback_thread.start()
 
-    run_async(prompt, audio_queue)
+    run_async(prompt, audio_queue, output_dir=output_dir)
 
     # Signal the playback thread to stop
     audio_queue.put(None)
